@@ -62,7 +62,9 @@ def load_address_data(file_paths_json):
     Given a JSON string of file paths, downloads them from Supabase
     and combines them into one DataFrame.
     """
-    file_urls = [f"{SUPABASE_BASE_URL}{path}" for path in json.loads(file_paths_json)]
+    # --- ✅ FIX: Replace Windows backslashes with URL forward slashes ---
+    file_paths = [path.replace("\\", "/") for path in json.loads(file_paths_json)]
+    file_urls = [f"{SUPABASE_BASE_URL}{path}" for path in file_paths]
     
     if not file_urls:
         return pd.DataFrame()
