@@ -62,9 +62,20 @@ def load_address_data(file_paths_json):
     Given a JSON string of file paths, downloads them from Supabase
     and combines them into one DataFrame.
     """
-    # --- ✅ FIX: Replace Windows backslashes with URL forward slashes ---
-    file_paths = [path.replace("\\", "/") for path in json.loads(file_paths_json)]
-    file_urls = [f"{SUPABASE_BASE_URL}{path}" for path in file_paths]
+    # Get the raw paths, e.g., ["output_data\boundary_10225.parquet"]
+    raw_paths = json.loads(file_paths_json)
+    
+    # --- ✅ FINAL FIX: Clean the paths ---
+    file_names = []
+    for path in raw_paths:
+        # 1. Replace Windows backslashes: "output_data/boundary_10225.parquet"
+        clean_path = path.replace("\\", "/")
+        # 2. Remove the "output_data/" prefix: "boundary_10225.parquet"
+        file_name = clean_path.replace("output_data/", "")
+        file_names.append(file_name)
+
+    # Build the final, correct URLs
+    file_urls = [f"{SUPABASE_BASE_URL}{name}" for name in file_names]
     
     if not file_urls:
         return pd.DataFrame()
