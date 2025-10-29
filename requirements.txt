@@ -6,3 +6,4 @@ streamlit-folium
 shapely
 usaddress-scourgify
 pyarrow
+requests
