@@ -62,22 +62,47 @@ def load_address_data(file_paths_json):
         return pd.DataFrame()
 
     df_list = []
+    
+    # --- ⬇️ REPLACEMENT LOGIC HERE ⬇️ ---
+    
+    # Define a browser-like header
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    }
+
     for url in file_urls:
         try:
-            # --- CHANGE: Read .csv and select columns ---
-            df = pd.read_csv(url)
+            # 1. Download the content using 'requests'
+            r = requests.get(url, headers=headers)
+            r.raise_for_status() # This will raise an HTTPError if the status is 4xx/5xx
+            
+            # 2. Decode the content and read it with pandas
+            content = r.content.decode('utf-8')
+            df = pd.read_csv(StringIO(content))
+
+            # 3. Append the required columns
             df_list.append(df[[ADDRESS_LAT_COLUMN, ADDRESS_LON_COLUMN, ADDRESS_FULL_COLUMN]])
-        except Exception as e:
-            st.warning(f"Could not load data shard: {url}. Error: {e}")
-            # If a column is missing, this will fail. Let's be more robust.
+
+        except requests.exceptions.HTTPError as http_err:
+            # This catches the '400 Bad Request'
+            st.warning(f"Could not load data shard: {url}. Error: {http_err}")
+            
+        except KeyError as key_err:
+            # This catches if a column (e.g., 'FullAddress') is missing
+            st.warning(f"Data shard {url} loaded, but a column was missing ({key_err}). Loading available columns.")
             try:
-                df = pd.read_csv(url)
-                # Check if needed columns exist
+                # We already have 'df' from the 'try' block, no need to re-download
                 cols_to_load = [c for c in [ADDRESS_LAT_COLUMN, ADDRESS_LON_COLUMN, ADDRESS_FULL_COLUMN] if c in df.columns]
                 df_list.append(df[cols_to_load])
             except Exception as inner_e:
-                st.warning(f"Failed again on {url}: {inner_e}")
+                st.warning(f"Failed to process {url} even after fallback: {inner_e}")
+        
+        except Exception as e:
+            # Catch any other unexpected error
+            st.warning(f"An unexpected error occurred with {url}. Error: {e}")
             
+    # --- ⬆️ END REPLACEMENT LOGIC ⬆️ ---
+
     if not df_list:
         return pd.DataFrame()
         
