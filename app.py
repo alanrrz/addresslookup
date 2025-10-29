@@ -7,6 +7,8 @@ from streamlit_folium import st_folium
 from shapely.geometry import Point, shape
 import usaddress
 import json
+import requests  
+from io import StringIO 
 
 # --- ⚠️ CONFIGURATION - ALL VALUES ARE FILLED IN ---
 SUPABASE_BASE_URL = "https://wrvonobxqimskkiajkft.supabase.co/storage/v1/object/public/data-splits/"
